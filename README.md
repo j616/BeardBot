@@ -329,12 +329,18 @@ refrences and provided links.
 Dependencies
 ------------
 ### Required
-*   [irclib](http://python-irclib.sourceforge.net)
-*   [PyPy](http://pypy.org)
+*   [irc](https://pypi.python.org/pypi/irc/)
+*   [bcrypt](https://pypi.python.org/pypi/bcrypt/)
 
 ### Package Specific
 #### upstrack
-*   [packagetrack](http://pypi.python.org/pypi/packagetrack/0.2)
+*   [packagetrack](https://pypi.python.org/pypi/packagetrack/)
+
+#### urltitle
+*   [beautifulsoup4](https://pypi.python.org/pypi/beautifulsoup4/)
+
+#### spellingnazi
+*   [pyenchant](https://pypi.python.org/pypi/pyenchant/)
 
 
 About
