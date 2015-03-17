@@ -6,8 +6,9 @@ import sys
 sys.path.append("./modules")
 import traceback
 import pickle
-from ircbot import SingleServerIRCBot
-from irclib import nm_to_n, nm_to_h, irc_lower
+import irc.strings
+from irc.bot import SingleServerIRCBot
+from irc.client import NickMask
 from optparse import OptionParser
 
 class IncompatibleModuleError(Exception):
@@ -19,8 +20,7 @@ class IncompatibleModuleError(Exception):
 class BeardBot(SingleServerIRCBot):
 		def __init__(self, channel, server, port=6667, password=None, name="beardbot", noadmin=False):
 			SingleServerIRCBot.__init__(self, [(server, port, password)],
-			                            name,
-			                            "The Beardy-Based Botulator")
+			                            name, "The Beardy-Based Botulator")
 			# The channel the bot is a member of
 			self.channel = channel
 			
@@ -50,6 +50,13 @@ class BeardBot(SingleServerIRCBot):
 					self.load_module("admin")
 				except Exception, e:
 					print e
+			finally:
+				# There was a .db, but it didn't contain admin...
+				if "admin" not in self.modules:
+					try:
+						self.load_module("admin")
+					except Exception, e:
+						print e
 		
 		def get_nick(self):
 			"""Get the bot's nickname"""
@@ -87,9 +94,9 @@ class BeardBot(SingleServerIRCBot):
 		
 		def on_privmsg(self, c, e):
 			# Handle a message recieved from the channel
-			source_name = nm_to_n(e.source()).lower()
-			source_host = nm_to_h(e.source())
-			message = e.arguments()[0].decode("UTF8")
+			source_name = e.source.nick.lower()
+			source_host = e.source.host
+			message = e.arguments[0].decode("UTF8")
 			
 			if source_name in self.ignore:
 				return
@@ -104,7 +111,7 @@ class BeardBot(SingleServerIRCBot):
 			
 			if message == "die":
 				# Force the bot to die
-				self.die("Someone killed me... It was you, " + nm_to_n(e.source()))
+				self.die("Someone killed me... It was you, " + e.source.nick.lower())
 			elif message == "panic:reloadadmin":
 				# Restart the admin module if something is going wrong
 				try:
@@ -113,9 +120,9 @@ class BeardBot(SingleServerIRCBot):
 					print e
 
 		def on_action(self, c, e):
-			source_name = nm_to_n(e.source()).lower()
-			source_host = nm_to_h(e.source())
-			message = e.arguments()[0].decode("UTF8")
+			source_name = e.source.nick.lower()
+			source_host = e.source.host
+			message = e.arguments[0].decode("UTF8")
 			
 			if source_name in self.ignore:
 				return
@@ -129,9 +136,9 @@ class BeardBot(SingleServerIRCBot):
 			
 		def on_pubmsg(self, c, e):
 			# Handle a message recieved from the channel
-			source_name = nm_to_n(e.source()).lower()
-			source_host = nm_to_h(e.source())
-			message = e.arguments()[0]
+			source_name = e.source.nick.lower()
+			source_host = e.source.host
+			message = e.arguments[0]
 			
 			if source_name in self.ignore:
 				return
@@ -141,14 +148,13 @@ class BeardBot(SingleServerIRCBot):
 			# If a message was addressed specifically to the bot, note this and strip
 			# this from the message
 			addressed_to_BeardBot = False
-			if irc_lower(message).startswith("%s: " % self.nick.lower()):
+			if irc.strings.lower(message).startswith("%s: " % self.nick.lower()):
 				message = message.split(": ", 1)[-1]
 				addressed_to_BeardBot = True
-			elif irc_lower(message).startswith("%s, " % self.nick.lower()):
+			elif irc.strings.lower(message).startswith("%s, " % self.nick.lower()):
  				message = message.split(", ", 1)[-1]
 				addressed_to_BeardBot = True
 
-			
 			# Alert each module that a message has arrived
 			for module in self.modules.values():
 				try:
@@ -160,8 +166,8 @@ class BeardBot(SingleServerIRCBot):
 					traceback.print_exc(file=sys.stdout)
 
 		def on_part(self, c, e):
-			source_name = nm_to_n(e.source()).lower()
-			source_host = nm_to_h(e.source())
+			source_name = e.source.nick.lower()
+			source_host = e.source.host
 			
 			if source_name in self.ignore:
 				return
@@ -173,8 +179,8 @@ class BeardBot(SingleServerIRCBot):
 					traceback.print_exc(file=sys.stdout)
 
 		def on_quit(self, c, e):
-			source_name = nm_to_n(e.source()).lower()
-			source_host = nm_to_h(e.source())
+			source_name = e.source.nick.lower()
+			source_host = e.source.host
 			
 			if source_name in self.ignore:
 				return
@@ -186,9 +192,9 @@ class BeardBot(SingleServerIRCBot):
 					traceback.print_exc(file=sys.stdout)
 
 		def on_nick(self, c, e):
-			source_before = nm_to_n(e.source()).lower()
-			source_after = nm_to_n(e.target()).lower()
-			source_host = nm_to_h(e.source())
+			source_before = e.source.nick.lower()
+			source_after = e.target.nick.lower()
+			source_host = e.source.host
 			
 			if source_before in self.ignore:
 				return
@@ -268,6 +274,8 @@ def main():
 	if noadmin:
 		print "With no admin"
 	
+	# Avoid UTF8 decode error with non-UTF8 input
+	irc.client.ServerConnection.buffer_class = irc.buffer.LenientDecodingLineBuffer
 	# Run the bot.
 	bot = BeardBot(room, server, port=port, password=password, name=name, noadmin=noadmin)
 	
