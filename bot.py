@@ -7,6 +7,7 @@ sys.path.append("./modules")
 import traceback
 import pickle
 import irc.strings
+import irc.buffer
 from irc.bot import SingleServerIRCBot
 from irc.client import NickMask
 from optparse import OptionParser
