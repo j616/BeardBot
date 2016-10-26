@@ -209,6 +209,12 @@ features:
 
         [in a pm] recent messages
 
+#### metrolink
+Tells you the next trams at a specified Manchester Metrolink stop:
+
+* Get tram info
+        Tram <station name>
+
 #### ping
 A ping module. Ping a nick and time their reply.
 
