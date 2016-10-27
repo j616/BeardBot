@@ -97,9 +97,9 @@ will just print the line statuses"""
 			self.bot.pm(source_name, self.lineStatusToString(status))
 
 
-	@on_channel_match("^Trams (\w+)", re.I)
+	@on_channel_match("^Trams((?:\s(?:\w+))+)", re.I)
 	def on_chan_trams_station(self, source_name, source_host, message, stationName):
-		stationID = self.findClosestIDFromName(stationName)
+		stationID = self.findClosestIDFromName(stationName.strip())
 		if stationID == None:
 			self.bot.say("Sorry, I can't find that station")
 		else:
@@ -112,9 +112,9 @@ will just print the line statuses"""
 				for departure in stationDepartures:
 					self.bot.say(self.departureToString(departure))
 
-	@on_private_match("^Trams (\w+)", re.I)
+	@on_private_match("^Trams((?:\s(?:\w+))+)", re.I)
 	def on_priv_trams_station(self, source_name, source_host, message, stationName):
-		stationID = self.findClosestIDFromName(stationName)
+		stationID = self.findClosestIDFromName(stationName.strip())
 		if stationID == None:
 			self.bot.pm(source_name, "Sorry, I can't find that station")
 		else:
