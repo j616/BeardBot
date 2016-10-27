@@ -5,7 +5,9 @@ requiredBeardBotVersion = 0.1
 class BeardBotModule(ModuleBase):
 	"""Check live Metrolink departures:
 *   Trams <stop name>
-where <stop name> is the name of the stop you'd like tram times for."""
+where <stop name> is the name of the stop you'd like tram times for.
+*	Trams
+will just print the line statuses"""
 
 	def getStations(self):
 		r = requests.get('http://beta.tfgm.com/api/public-transport/stations/')
@@ -65,10 +67,38 @@ where <stop name> is the name of the stop you'd like tram times for."""
 		thisString = thisString + departure["wait"] + "mins"
 		return thisString
 
+	def getLineStatuses(self):
+		r = requests.get('http://beta.tfgm.com/api/delays-and-disruptions/statuses/tram')
+		statuses = r.json()['items']
+		for status in statuses:
+			if "detail" in status:
+				status["detail"] = status["detail"].replace("<p>", "")
+				status["detail"] = status["detail"].replace("</p>", " ")
+				status["detail"] = status["detail"].strip()
+		return statuses
+
+	def lineStatusToString(self, status):
+		outStatus = status["name"] + " - "
+		outStatus = outStatus + status["status"]
+		if "detail" in status:
+			outStatus = outStatus + " - " + status["detail"]
+		return outStatus
+
+	@on_channel_match("^Trams$")
+	def on_chan_trams_status(self, source_name, source_host, message):
+		self.bot.say("The current line statuses on Metrolink are:-")
+		for status in self.getLineStatuses():
+			self.bot.say(self.lineStatusToString(status))
+
+	@on_private_match("^Trams$")
+	def on_priv_trams_status(self, source_name, source_host, message):
+		self.bot.pm(source_name, "The current line statuses on Metrolink are:-")
+		for status in self.getLineStatuses():
+			self.bot.pm(source_name, self.lineStatusToString(status))
+
 
 	@on_channel_match("^Trams (\w+)", re.I)
-	def on_chan_trams(self, source_name, source_host, message, stationName):
-		print("test")
+	def on_chan_trams_station(self, source_name, source_host, message, stationName):
 		stationID = self.findClosestIDFromName(stationName)
 		if stationID == None:
 			self.bot.say("Sorry, I can't find that station")
@@ -83,7 +113,7 @@ where <stop name> is the name of the stop you'd like tram times for."""
 					self.bot.say(self.departureToString(departure))
 
 	@on_private_match("^Trams (\w+)", re.I)
-	def on_priv_trams(self, source_name, source_host, message, stationName):
+	def on_priv_trams_station(self, source_name, source_host, message, stationName):
 		stationID = self.findClosestIDFromName(stationName)
 		if stationID == None:
 			self.bot.pm(source_name, "Sorry, I can't find that station")
