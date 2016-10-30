@@ -139,6 +139,12 @@ name of the bot in the channel):
 
         beardbot: shave your beard
 
+#### boss
+The most simple reply bot you can have.
+
+*   do all your actions like a boss
+        /me does an action
+
 #### bucket
 A simple game by Tom Nixon. Put something in, get something out.
 
