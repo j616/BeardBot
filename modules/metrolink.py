@@ -68,7 +68,7 @@ will just print the line statuses"""
 		return thisString
 
 	def getLineStatuses(self):
-		r = requests.get('http://beta.tfgm.com/api/delays-and-disruptions/statuses/tram')
+		r = requests.get('http://beta.tfgm.com/api/statuses/tram')
 		statuses = r.json()['items']
 		for status in statuses:
 			if "detail" in status:
