@@ -1,5 +1,5 @@
 from base_module import *
-import requests, bs4, difflib
+import requests, bs4, difflib, string
 
 requiredBeardBotVersion = 0.1
 class BeardBotModule(ModuleBase):
@@ -10,8 +10,12 @@ where <stop name> is the name of the stop you'd like tram times for.
 will just print the line statuses"""
 
 	def getStations(self):
-		r = requests.get('http://beta.tfgm.com/api/public-transport/stations/')
-		return r.json()
+		stations = []
+		for letter in list(string.ascii_lowercase):
+			r = requests.get('https://beta.tfgm.com/api/search?q=' + letter + '&type=tram-stop-gm')
+			if r.json()["count"] > 0:
+				stations.extend(r.json()["items"])
+		return stations
 
 	def getMetrolinkStations(self):
 		stations = self.getStations()
@@ -21,7 +25,7 @@ will just print the line statuses"""
 	def getDepartures(self, stationHref):
 		departures = []
 
-		url = "http://beta.tfgm.com" + stationHref + "?layout=false"
+		url = "https://beta.tfgm.com" + stationHref + "?layout=false"
 		stopInfo = requests.get(url).text
 		stopInfoBS = bs4.BeautifulSoup(stopInfo, "html.parser")
 		departuresHTML = stopInfoBS.find(id="departure-items")
@@ -33,6 +37,9 @@ will just print the line statuses"""
 				thisDeparture["destination"] = departure.find("td", {"class":"departure-destination"}).text
 				thisDeparture["carriages"] = departure.find("td", {"class": "departure-carriages"}).find("span").text
 				thisDeparture["wait"] = departure.find("td", {"class": "departure-wait"}).find("span", {"class":"figure"}).text
+				units = departure.find("td", {"class": "departure-wait"}).find("span", {"class":"unit"})
+				if units != None:
+					thisDeparture["wait"] = thisDeparture["wait"] + " " + units.text
 				departures.append(thisDeparture)
 
 		return departures
@@ -47,24 +54,24 @@ will just print the line statuses"""
 		return self.getDepartures(self.getHrefFromId(station))
 
 	def findClosestIDFromName(self, name):
-		stationNames = [station["name"] for station in self.stations]
+		stationNames = [station["title"] for station in self.stations]
 		name = difflib.get_close_matches(name, stationNames, cutoff=0.3, n=1)[0]
 		for station in self.stations:
-			if station["name"] == name:
+			if station["title"] == name:
 				return station["id"]
 		return None
 
 	def stationNameFromID(self, thisId):
 		for station in self.stations:
 			if station["id"] == thisId:
-				return station["name"]
+				return station["title"]
 		return None
 
 	def departureToString(self, departure):
 		thisString = ""
 		thisString = thisString + departure["destination"] + " - "
 		thisString = thisString + departure["carriages"] + " - "
-		thisString = thisString + departure["wait"] + "mins"
+		thisString = thisString + departure["wait"]
 		return thisString
 
 	def getLineStatuses(self):
